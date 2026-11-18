@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 
 interface NodeData {
@@ -77,7 +77,7 @@ export default function Graph() {
 
   const svgHeight = Math.max(400, Math.ceil(nodes.length / COLS) * ROW_HEIGHT + PADDING * 2);
 
-  function exportJson() {
+  const exportJson = useCallback(() => {
     const blob = new Blob([JSON.stringify({ nodes, edges }, null, 2)], {
       type: 'application/json',
     });
@@ -86,7 +86,7 @@ export default function Graph() {
     anchor.download = 'osint-graph.json';
     anchor.click();
     URL.revokeObjectURL(anchor.href);
-  }
+  }, [nodes, edges]);
 
   return (
     <div className="shell">
@@ -142,8 +142,10 @@ export default function Graph() {
             {nodes.map((n) => {
               const p = positions[n.data.id];
               if (!p) return null;
+              const label = (n.data.label || n.data.id).slice(0, 24);
               return (
-                <g key={n.data.id}>
+                <g key={n.data.id} role="img" aria-label={`${n.data.type}: ${label}`}>
+                  <title>{`${n.data.type}: ${n.data.label || n.data.id}`}</title>
                   <circle cx={p.x} cy={p.y} r="24" fill="#2563eb" />
                   <text
                     x={p.x}
@@ -152,7 +154,7 @@ export default function Graph() {
                     fill="#e2e8f0"
                     fontSize="11"
                   >
-                    {(n.data.label || n.data.id).slice(0, 24)}
+                    {label}
                   </text>
                 </g>
               );

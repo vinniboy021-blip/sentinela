@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function NewInvestigation() {
@@ -10,7 +10,7 @@ export default function NewInvestigation() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  async function save(e: React.FormEvent) {
+  const save = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -39,7 +39,7 @@ export default function NewInvestigation() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [title, objective, router]);
 
   return (
     <main className="main">

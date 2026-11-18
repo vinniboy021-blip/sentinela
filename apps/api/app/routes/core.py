@@ -34,11 +34,11 @@ from app.notifications import deliver
 router = APIRouter(tags=["Núcleo"])
 
 
-def dump(x):
+def dump(x: Any) -> dict[str, Any]:
     return {c.name: getattr(x, c.name) for c in x.__table__.columns}
 
 
-def page(db, q, skip=0, limit=50):
+def page(db: Session, q: Any, skip: int = 0, limit: int = 50) -> dict[str, Any]:
     limit = min(max(limit, 1), 200)
     return {
         "items": [dump(x) for x in db.scalars(q.offset(skip).limit(limit)).all()],

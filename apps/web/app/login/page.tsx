@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function Login() {
@@ -10,7 +10,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  async function submit(e: React.FormEvent) {
+  const submit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -36,7 +36,7 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [email, password, router]);
 
   return (
     <main className="main">

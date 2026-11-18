@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import Link from 'next/link';
 
 type SearchResults = Record<string, unknown[]>;
@@ -11,7 +11,7 @@ export default function Search() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  async function run(e: React.FormEvent) {
+  const run = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -33,7 +33,7 @@ export default function Search() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [query]);
 
   const hasResults = Object.keys(results).length > 0;
 

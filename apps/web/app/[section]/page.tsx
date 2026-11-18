@@ -26,7 +26,7 @@ export default function Section({ params }: { params: Promise<{ section: string 
       setTitle(section.replaceAll('-', ' '));
       const endpoint = SECTION_TO_ENDPOINT[section] ?? section;
 
-      fetch(`/api/v1/${endpoint}`, { credentials: 'include' })
+      fetch(`/api/v1/${endpoint}?skip=0&limit=50`, { credentials: 'include' })
         .then((r) => {
           if (r.status === 401) throw new Error('Sessão expirada. Faça login novamente.');
           if (r.status === 403) throw new Error('Acesso não autorizado.');
