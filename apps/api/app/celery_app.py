@@ -7,7 +7,7 @@ from kombu import Queue  # type: ignore[import-untyped]
 
 redis_url = os.getenv("REDIS_URL", "redis://redis:6379/0")
 celery_app = Celery(
-    "osint_tracker",
+    "sentinela",
     broker=os.getenv("CELERY_BROKER_URL", redis_url),
     backend=os.getenv("CELERY_RESULT_BACKEND", redis_url),
     include=["app.collection", "app.monitoring"],

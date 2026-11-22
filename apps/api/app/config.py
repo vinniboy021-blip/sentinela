@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     database_url: str = "postgresql+psycopg://osint:osint@postgres:5432/osint"
     redis_url: str = "redis://redis:6379/0"
-    session_cookie: str = "osint_session"
+    session_cookie: str = "sentinela_session"
     session_ttl_seconds: int = Field(default=28800, ge=300, le=604800)
     cookie_secure: bool = Field(
         default=False, validation_alias=AliasChoices("COOKIE_SECURE", "SECURE_COOKIES")
@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     smtp_starttls: bool = True
     smtp_username: str = ""
     smtp_password: str = ""
-    smtp_from: str = "osint-tracker@localhost"
+    smtp_from: str = "sentinela@localhost"
     alert_webhook_url: str = ""
     alert_webhook_secret: str = ""
 

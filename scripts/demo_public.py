@@ -16,7 +16,7 @@ request = urllib.request.Request(
     DEMO_URL,
     headers={
         "Accept": "application/vnd.github+json",
-        "User-Agent": "osint-tracker-demo",
+        "User-Agent": "sentinela-demo",
     },
 )
 

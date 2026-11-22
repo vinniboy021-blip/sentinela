@@ -33,7 +33,7 @@ export default function Dashboard() {
   return (
     <div className="shell">
       <aside className="side">
-        <h2>OSINT</h2>
+        <h2>Sentinela</h2>
         <nav>
           {NAV_ITEMS.map(([label, href]) => (
             <Link key={href} href={href}>

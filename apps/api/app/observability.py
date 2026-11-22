@@ -54,14 +54,14 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         try:
             response = await call_next(request)
             response.headers["X-Request-ID"] = request_id
-            logging.getLogger("osint.http").info(
+            logging.getLogger("sentinela.http").info(
                 "request_completed",
                 extra={"user_id": getattr(request.state, "user_id", None)},
                 exc_info=False,
             )
             return response
         finally:
-            logging.getLogger("osint.http").debug(
+            logging.getLogger("sentinela.http").debug(
                 "request_duration_ms=%.2f", (time.perf_counter() - started) * 1000
             )
             request_id_context.reset(token)

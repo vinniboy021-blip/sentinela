@@ -49,9 +49,9 @@ class _RealIPMiddleware(BaseHTTPMiddleware):
 
 configure_logging()
 app = FastAPI(
-    title="OSINT Tracker API",
+    title="Sentinela API",
     version="0.1.0",
-    description="Coleta OSINT autorizada com proveniência auditável",
+    description="Coleta de fontes públicas autorizadas com proveniência auditável",
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -76,7 +76,7 @@ if settings.metrics_enabled:
 
 @app.get("/", include_in_schema=False)
 def root():
-    return {"name": "OSINT Tracker", "docs": "/docs", "status": "ok"}
+    return {"name": "Sentinela", "docs": "/docs", "status": "ok"}
 
 
 @app.get("/live", include_in_schema=False)

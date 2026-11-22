@@ -1,4 +1,4 @@
-# OSINT Tracker
+# Sentinela
 
 Plataforma open source (MIT) em português brasileiro para investigações sobre fontes públicas e autorizadas. Monólito modular em **FastAPI**, **PostgreSQL**, **Redis/Celery** e **Next.js**. Fontes, observações, decisões e evidências mantêm proveniência auditável. Não há dependência obrigatória de serviços pagos.
 

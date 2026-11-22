@@ -1,6 +1,6 @@
 # Segurança
 
-OSINT Tracker destina-se a coleta pública **autorizada** e inteligência defensiva. Não implementa
+Sentinela destina-se a coleta pública **autorizada** e inteligência defensiva. Não implementa
 invasão, contorno de autenticação, CAPTCHA, anti-bot ou restrições de privacidade. A existência
 de conteúdo publicamente acessível não elimina obrigações de finalidade, autorização e retenção.
 

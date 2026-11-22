@@ -1,4 +1,4 @@
-name: osint-tracker
+name: sentinela
 x-api-environment: &api-environment
   DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-osint}:${POSTGRES_PASSWORD:?configure POSTGRES_PASSWORD em .env}@postgres:5432/${POSTGRES_DB:-osint}
   REDIS_URL: redis://redis:6379/0
@@ -25,14 +25,14 @@ x-api-environment: &api-environment
   SMTP_STARTTLS: ${SMTP_STARTTLS:-true}
   SMTP_USERNAME: ${SMTP_USERNAME:-}
   SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-  SMTP_FROM: ${SMTP_FROM:-osint-tracker@localhost}
+  SMTP_FROM: ${SMTP_FROM:-sentinela@localhost}
   ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}
   ALERT_WEBHOOK_SECRET: ${ALERT_WEBHOOK_SECRET:-}
 x-api: &api
   build:
     context: .
     dockerfile: apps/api/Dockerfile
-  image: osint-tracker-api:local
+  image: sentinela-api:local
   environment: *api-environment
   restart: unless-stopped
   read_only: true
@@ -111,7 +111,7 @@ services:
     build:
       context: apps/web
       dockerfile: Dockerfile
-    image: osint-tracker-web:local
+    image: sentinela-web:local
     environment:
       API_INTERNAL_URL: http://api:8000
       PORT: '3000'

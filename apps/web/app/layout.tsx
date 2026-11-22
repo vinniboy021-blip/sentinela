@@ -1,8 +1,8 @@
 import './globals.css';
 
 export const metadata = {
-  title: 'OSINT Tracker',
-  description: 'Plataforma de investigação pública com proveniência auditável.',
+  title: 'Sentinela',
+  description: 'Plataforma de investigação de fontes públicas com proveniência auditável.',
   icons: {
     icon: '/favicon.ico',
     apple: '/apple-touch-icon.png',

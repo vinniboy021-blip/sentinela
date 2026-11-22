@@ -68,7 +68,7 @@ jobs:
         env:
           POSTGRES_PASSWORD: ci-only-password
           CONNECTOR_SECRET_KEY: adJrwjmhUk0LJFTzUsHcafWvKmkOCIh9WI5ITbtxgDg=
-          HOSTNAME: osint.example.org
+          HOSTNAME: sentinela.example.org
           ACME_EMAIL: ci@example.org
         run: docker compose -f docker-compose.yml -f docker-compose.prod.yml config --quiet
       - name: Build production images
@@ -90,8 +90,8 @@ jobs:
             if [ "$attempt" = 30 ]; then docker compose ps; docker compose logs --tail=100 api web migrate; exit 1; fi
             sleep 2
           done
-          python scripts/backup.py /tmp/osint-tracker-backup
-          python scripts/restore.py /tmp/osint-tracker-backup --replace-data
+          python scripts/backup.py /tmp/sentinela-backup
+          python scripts/restore.py /tmp/sentinela-backup --replace-data
           curl --fail --silent http://127.0.0.1:8000/ready >/dev/null
           curl --fail --silent http://127.0.0.1:3000/login >/dev/null
       - run: npm audit --audit-level=high

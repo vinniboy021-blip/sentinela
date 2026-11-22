@@ -76,7 +76,7 @@ Configure somente para um endpoint protegido por rede privada ou autenticação 
 | `SMTP_STARTTLS` | `true` | Usar STARTTLS |
 | `SMTP_USERNAME` | `` | Usuário SMTP (opcional) |
 | `SMTP_PASSWORD` | `` | Senha SMTP |
-| `SMTP_FROM` | `osint-tracker@localhost` | Endereço de remetente |
+| `SMTP_FROM` | `sentinela@localhost` | Endereço de remetente |
 | `ALERT_WEBHOOK_URL` | `` | URL HTTPS do webhook (validada e com DNS pin) |
 | `ALERT_WEBHOOK_SECRET` | `` | Segredo para assinatura HMAC-SHA256 (`X-OSINT-Signature`) |
 

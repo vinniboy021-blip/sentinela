@@ -58,7 +58,7 @@ def deliver(alert: Any, recipient: str = "") -> dict[str, Any]:
         if not address:
             raise ValueError("Endereço de e-mail inválido")
         message = EmailMessage()
-        message["Subject"] = f"OSINT Tracker: {alert.title}"
+        message["Subject"] = f"Sentinela: {alert.title}"
         message["From"] = settings.smtp_from
         message["To"] = address
         message.set_content(json.dumps(payload, ensure_ascii=False, indent=2, default=str))
@@ -81,7 +81,7 @@ def deliver(alert: Any, recipient: str = "") -> dict[str, Any]:
             response = client.post(
                 settings.alert_webhook_url,
                 content=body,
-                headers={"Content-Type": "application/json", "X-OSINT-Signature": f"sha256={signature}"},
+                headers={"Content-Type": "application/json", "X-Sentinela-Signature": f"sha256={signature}"},
             )
         response.raise_for_status()
         results["webhook"] = "sent"

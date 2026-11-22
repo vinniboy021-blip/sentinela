@@ -97,7 +97,7 @@ def _counter(key: str, window: int, increment: bool = False) -> int:
 
 def request_rate_limit(request: Request) -> None:
     identity = request.client.host if request.client else "unknown"
-    key = "osint:rate:" + hashlib.sha256(identity.encode()).hexdigest()
+    key = "sentinela:rate:" + hashlib.sha256(identity.encode()).hexdigest()
     if _counter(key, 60, increment=True) > settings.rate_limit_per_minute:
         raise HTTPException(429, "Limite de requisições atingido", headers={"Retry-After": "60"})
 
@@ -229,8 +229,8 @@ def login(
         raise HTTPException(403, "Origem não autorizada")
     email = str(body.email).lower()
     ip = request.client.host if request.client else "unknown"
-    key = "osint:login:" + hashlib.sha256(f"{ip}:{email}".encode()).hexdigest()
-    ip_key = "osint:login-ip:" + hashlib.sha256(ip.encode()).hexdigest()
+    key = "sentinela:login:" + hashlib.sha256(f"{ip}:{email}".encode()).hexdigest()
+    ip_key = "sentinela:login-ip:" + hashlib.sha256(ip.encode()).hexdigest()
     if (
         _counter(key, settings.login_window_seconds) >= settings.login_max_attempts
         or _counter(ip_key, settings.login_window_seconds) >= settings.login_max_attempts * 10

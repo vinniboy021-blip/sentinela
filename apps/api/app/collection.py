@@ -373,7 +373,7 @@ def _rate_limit(connector_id: str) -> float:
     """Coordinate starts across workers; connector HTTP clients also limit requests."""
     client = redis.Redis.from_url(settings.redis_url, socket_connect_timeout=2, socket_timeout=2)
     try:
-        accepted = client.set(f"osint:collection:start:{connector_id}", "1", nx=True, px=1000)
+        accepted = client.set(f"sentinela:collection:start:{connector_id}", "1", nx=True, px=1000)
         return 0 if accepted else 1.5
     finally:
         client.close()

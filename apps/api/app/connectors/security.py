@@ -149,7 +149,7 @@ class RateLimiter:
         if self.redis is not None:
             try:
                 allowed = self.redis.set(
-                    f"osint:connector:rate:{host}", "1", nx=True, px=max(1, int(interval * 1000))
+                    f"sentinela:connector:rate:{host}", "1", nx=True, px=max(1, int(interval * 1000))
                 )
             except Exception as exc:
                 raise ConnectorError(
@@ -200,7 +200,7 @@ class SafeHTTP:
                 timeout=self.timeout,
                 follow_redirects=False,
                 trust_env=True,
-                headers={"User-Agent": "OSINT-Tracker/0.1 (passive public data)"},
+                headers={"User-Agent": "Sentinela/0.1 (passive public data)"},
             )
         transport = httpx.HTTPTransport(retries=0, trust_env=False)
         # httpx 0.28/httpcore 1.x do not expose network_backend on HTTPTransport.
@@ -211,7 +211,7 @@ class SafeHTTP:
             timeout=self.timeout,
             follow_redirects=False,
             trust_env=False,
-            headers={"User-Agent": "OSINT-Tracker/0.1 (passive public data)"},
+            headers={"User-Agent": "Sentinela/0.1 (passive public data)"},
         )
 
     def request(

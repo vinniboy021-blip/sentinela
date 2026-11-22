@@ -1,6 +1,6 @@
 # Roadmap
 
-Este documento descreve evoluções planejadas para o OSINT Tracker. Nenhum item representa um compromisso de entrega; priorização depende de feedback da comunidade e recursos disponíveis.
+Este documento descreve evoluções planejadas para o Sentinela. Nenhum item representa um compromisso de entrega; priorização depende de feedback da comunidade e recursos disponíveis.
 
 ## Curto prazo
 

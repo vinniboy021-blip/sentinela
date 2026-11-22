@@ -1,4 +1,4 @@
-# Documentação do OSINT Tracker
+# Documentação do Sentinela
 
 Este diretório contém os registros de implementação e validação. A documentação operacional completa está na raiz do repositório para ficar visível no GitHub:
 

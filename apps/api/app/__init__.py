@@ -1,1 +1,1 @@
-"""OSINT Tracker: monólito modular para fontes públicas autorizadas."""
+"""Sentinela: monólito modular para fontes públicas autorizadas."""
