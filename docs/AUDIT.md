@@ -1,57 +1,77 @@
-# Auditoria profunda de segurança e operação
+# Registro de auditoria de segurança e operação
 
-Data da revisão: 29/10/2026 (BRT)
-Escopo: backend FastAPI, workers Celery, PostgreSQL, Redis, frontend Next.js, Docker Compose, migrações, controles de acesso, conectores HTTP e cadeia de evidências.
+## Rodada 3 — qualidade e acessibilidade (2026-11-22)
 
-## Resultado executivo
+**Escopo**: frontend Next.js, Dockerfile web, `routes/core.py`, testes E2E, documentação.
 
-A revisão encontrou e corrigiu um vazamento de escopo entre investigações, uma autorização administrativa incompleta, um problema de exclusão em cascata de evidências e vulnerabilidades conhecidas nas dependências Python e JavaScript. Também foram corrigidos o estágio de build do frontend e o alvo local de auditoria do Makefile.
-
-O fluxo funcional foi exercitado com PostgreSQL e Redis reais: autenticação, criação de investigação, coleta DNS pública, persistência de observações, execução recorrente por Celery Beat/worker e atualização do monitor. O CI agora também constrói as imagens e executa backup/restauração em Compose. O repositório ainda não deve ser tratado como certificado para produção: não foi realizado pentest independente ou DAST externo.
-
-O build local de imagens foi tentado com Docker. O contexto do frontend foi reduzido com `.dockerignore`; a compilação não concluiu neste executor porque o sandbox de build não possui saída de rede para o índice npm/PyPI. O CI GitHub executa os builds e terminou com sucesso nos commits anteriores.
-
-## Achados corrigidos
+### Achados corrigidos
 
 | ID | Severidade | Achado | Correção |
 |---|---|---|---|
-| AUD-01 | Alta | Dashboard, busca, alertas e auditoria podiam consultar registros de outras investigações quando o usuário não informava um filtro. | Todos os agregados e consultas globais usam o conjunto de investigações do proprietário ou membro; administradores mantêm visão global. Teste dedicado cobre isolamento. |
-| AUD-02 | Alta | A listagem de conectores administrativos aceitava qualquer usuário autenticado. | Rota protegida por `require_admin`; teste verifica resposta 403 para analista. |
-| AUD-03 | Média | Exclusão de evidência removia versões explicitamente e também acionava cascata do banco, gerando bookkeeping inconsistente do ORM. | A exclusão do pai usa a cascata `ON DELETE CASCADE`; a cadeia de custódia permanece consistente. |
-| AUD-04 | Alta | `starlette`, `next`/`eslint-config-next` e ferramentas de desenvolvimento tinham versões vulneráveis ou antigas. | Dependências atualizadas; `pip-audit` e `npm audit --audit-level=high` sem vulnerabilidades conhecidas. |
-| AUD-05 | Média | Build de produção do frontend omitia dependências de desenvolvimento necessárias ao TypeScript/lint/build. | Dockerfile usa `npm ci` no estágio de build e mantém apenas o artefato standalone no runtime. |
-| AUD-06 | Baixa | `make audit` tentava gravar cache em diretório não gravável no executor. | Cache direcionado para `XDG_CACHE_HOME` configurável, com fallback em `/tmp`. |
-| AUD-07 | Média | Webhooks configurados no servidor podiam causar requisições para destinos internos em caso de configuração comprometida. | Destino passa pela mesma validação HTTPS/porta 443/endereço público usada pelos conectores antes do POST. |
-| AUD-08 | Média | O bloqueio de métricas no Caddy não cobria o caminho montado `/metrics/prometheus`. | Matcher atualizado para bloquear `/metrics*` e `/api/metrics*` na borda pública. |
-| AUD-09 | Média | O modelo de colaboradores existia, mas não havia API para o proprietário gerenciar membros. | Adicionados endpoints autenticados para listar, adicionar, atualizar e remover membros; respostas nunca incluem hashes de senha. |
+| AUD-18 | Média | `globals.css` minificado sem classe `.error`; mensagens de erro sem estilo diferenciado. | Desminificado; adicionada `.error` (vermelho), `:focus`, hover com transição, tipografia. |
+| AUD-19 | Média | `next.config.ts` sem `headers()`; headers de segurança dependiam exclusivamente do Caddy. | Adicionado `headers()` com `X-Frame-Options`, `CSP`, `Referrer-Policy`, `Permissions-Policy`. |
+| AUD-20 | Baixa | `Dockerfile` web sem `--chown=node:node`; arquivos standalone com ownership root. | Adicionado `--chown=node:node` nos COPYs; copia `public/`; `NEXT_TELEMETRY_DISABLED=1`. |
+| AUD-21 | Baixa | `smoke.spec.ts` minificado sem teste de erro de login nem de botão desabilitado. | Reformatado; adicionados testes de `role="alert"` e botão desabilitado durante envio. |
+| AUD-22 | Baixa | `[section]/page.tsx` sem `?skip=0&limit=50`; paginação implícita dependia do default do backend. | Adicionado `?skip=0&limit=50`; 401/403 tratados com mensagens distintas. |
+| AUD-23 | Baixa | Nós SVG do grafo sem `<title>` nem `aria-label`; inacessíveis a leitores de tela. | Adicionados `<title>` e `role="img" aria-label` em cada nó. |
+| AUD-24 | Baixa | `dump()` e `page()` em `routes/core.py` sem anotações de tipo. | Anotações `Any`, `Session`, `dict[str, Any]` adicionadas. |
+| AUD-25 | Baixa | `ROADMAP.md` referenciado no README mas inexistente. | Criado com itens curto/médio/longo prazo e seção "fora do escopo". |
 
-## Evidências executadas
+---
 
-- `pytest apps/api/tests -q`: 50 testes aprovados.
-- `ruff check apps/api`: aprovado.
-- `mypy apps/api/app`: aprovado.
-- `pip-audit --local`: nenhuma vulnerabilidade conhecida.
-- `bandit -r apps/api/app --severity-level medium`: nenhum achado de severidade média ou alta.
-- `npm run typecheck`, `npm run lint` e `npm run build`: aprovados com Next.js 16.
-- `npm audit --audit-level=high`: 0 vulnerabilidades.
-- Alembic em PostgreSQL real: `upgrade head`, `downgrade base`, `upgrade head` e `alembic check` aprovados.
-- API real: `/ready` retornou PostgreSQL e Redis como `ok`.
-- Coleta real: consulta DNS de `example.com` foi persistida como observações e finalizou como `succeeded`.
-- Monitor real: Celery Beat agendou a execução, worker processou a tarefa e o próximo vencimento foi atualizado.
-- `docker compose config --quiet` e configuração de produção passaram.
-- `caddy:2-alpine caddy validate` aprovou a configuração da borda HTTPS e do bloqueio de métricas.
+## Rodada 2 — hardening de proxy e migração (2026-11-18)
 
-## Riscos residuais e próximos passos
+**Escopo**: Dockerfile API, Caddyfile, `migrations/0001_initial.py`, scripts.
 
-1. Não houve pentest independente, DAST autenticado ou revisão externa de configuração de uma implantação pública.
-2. O ensaio automatizado de backup/restauração está no job de containers do CI; uma execução de desastre com volumes e armazenamento externos ainda deve ser feita antes do primeiro deploy público.
-3. A integração Meta depende de credenciais e permissões oficiais; não é declarada funcional sem elas. O adaptador Kali/MCP continua opcional e não concede privilégios de execução arbitrária.
-4. O endpoint Prometheus está bloqueado no Caddy e deve continuar protegido pela rede/edge em produção; métricas não devem ser expostas diretamente à Internet.
-5. A migração inicial usa `Base.metadata.create_all`; as próximas alterações devem ser migrações Alembic explícitas para garantir rollback e revisão de esquema.
-6. O `TestClient` de Starlette emite aviso de depreciação para `httpx`; a suíte passa, mas a migração para o cliente recomendado deve ser planejada antes da próxima atualização major.
-7. O transporte HTTP seguro usa um detalhe interno de `httpcore` para fixar resolução DNS. Uma atualização de `httpx/httpcore` deve ser acompanhada por testes de SSRF e de conexão TLS.
-8. A interface web ainda precisa expor todas as operações de colaboração adicionadas à API; o backend já aplica autorização do proprietário.
+### Achados corrigidos
 
-## Conclusão
+| ID | Severidade | Achado | Correção |
+|---|---|---|---|
+| AUD-10 | Alta | `--forwarded-allow-ips *` no uvicorn fazia o serviço confiar em `X-Forwarded-For` de qualquer IP, contornando `_RealIPMiddleware` e permitindo bypass do rate limiter. | Restringido para `127.0.0.1`; apenas o proxy Caddy (loopback na rede Docker) é confiável. |
+| AUD-11 | Média | Caddyfile sem `X-Frame-Options`, `Content-Security-Policy` e `Permissions-Policy`. | Adicionados os três; HSTS reforçado com `preload`. |
+| AUD-12 | Média | `migrations/0001_initial.py` usava `Base.metadata.create_all/drop_all` — anti-padrão Alembic que ignora histórico de migrações e não é reproduzível com `downgrade`. | Substituído por DDL explícito com ~200 linhas: todas as tabelas, índices e `downgrade` correto. |
+| AUD-13 | Baixa | `scripts/purge_expired_evidence.py` usava SQLAlchemy 1.x `db.query()`. | Modernizado para `select()`; shebang; `sys.exit(1)` em caso de falhas. |
+| AUD-14 | Baixa | `scripts/demo_public.py` era código minificado sem tratamento de erros HTTP. | Reformatado; `try/except HTTPError/URLError`; mensagens em `stderr`. |
 
-Os controles críticos verificados nesta rodada estão cobertos por código e testes automatizados. O release pode avançar como versão de desenvolvimento/RC após revisar os riscos residuais acima; a classificação como produção deve aguardar teste de restauração, DAST e revisão operacional dos segredos, backups, Caddy e políticas de retenção.
+---
+
+## Rodada 1 — segurança de notificações e middleware (2026-11-12)
+
+**Escopo**: `notifications.py`, `main.py`, `observability.py`, `routes/core.py`.
+
+### Achados corrigidos
+
+| ID | Severidade | Achado | Correção |
+|---|---|---|---|
+| AUD-01 | Alta | `hmac.new` inexistente em Python 3; webhook estava sempre inoperante. | Corrigido para `hmac.HMAC(key, body, sha256)`. |
+| AUD-02 | Alta | Webhook não usava `PublicNetworkBackend`; suscetível a DNS rebinding. | `_webhook_client()` com `PublicNetworkBackend` e DNS pin no TCP connect. |
+| AUD-03 | Alta | `X-Forwarded-For` aceito de qualquer peer; qualquer cliente podia falsificar IP e escapar do throttle. | `_RealIPMiddleware` só propaga IP quando peer é loopback/RFC-1918. |
+| AUD-04 | Média | `X-Request-ID` refletido sem sanitização; suscetível a log injection e header injection. | Sanitizado para `[A-Za-z0-9\-_]`, máx 64 chars, antes de qualquer uso. |
+| AUD-05 | Média | Parâmetro `recipient` aceito como `str` livre em `POST /alerts/{id}/deliver`. | Trocado para `EmailStr` Pydantic + `_validate_recipient()` com regex e proteção contra `\n`/`\r`. |
+
+---
+
+## Auditoria anterior (2026-10-29)
+
+Auditoria profunda de escopo completo. Resultados e evidências em [AUDIT.md versão anterior].
+
+Achados já corrigidos (referência):
+- AUD-P01 Alta: Isolamento entre investigações em agregados e busca.
+- AUD-P02 Alta: Rota de conectores administrativos sem RBAC.
+- AUD-P03 Média: Cascata de evidências inconsistente.
+- AUD-P04 Alta: Dependências vulneráveis (starlette, next, eslint-config-next).
+- AUD-P05 Média: Build do frontend omitia dependências de desenvolvimento.
+- AUD-P06 Baixa: `make audit` gravava cache em diretório não gravável.
+- AUD-P07 Média: Webhook sem validação de destino interno.
+- AUD-P08 Média: Caddy não bloqueava `/metrics/prometheus` completo.
+- AUD-P09 Média: Sem API de colaboradores/membros de investigação.
+
+## Riscos residuais
+
+1. Sem pentest independente, DAST autenticado ou revisão externa de configuração pública.
+2. Ensaio de desastre com volumes externos pendente; apenas smoke test CI foi executado.
+3. Integração Meta não validada remotamente sem credenciais e permissões oficiais.
+4. Métricas Prometheus devem continuar bloqueadas no Caddy e acessíveis apenas por rede interna.
+5. `TestClient` de Starlette emite aviso de depreciação para httpx; suíte passa mas migração deve ser planejada.
+6. `PublicNetworkBackend` usa detalhe interno de `httpcore` para pinning DNS; updates de `httpx/httpcore` devem ser acompanhados por testes de SSRF.
+7. Interface web de colaboração parcialmente implementada; backend aplica autorização mas nem todas as operações têm tela dedicada.
