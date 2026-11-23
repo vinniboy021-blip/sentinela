@@ -22,7 +22,7 @@ de conteúdo publicamente acessível não elimina obrigações de finalidade, au
 | Evidências | Chaves alfanuméricas de 32 chars; `O_EXCL + O_NOFOLLOW`; symlinks bloqueados; SHA-256 verificável |
 | Upload | Spooled temporário com limite configurável; content-type preservado sem execução |
 | Download | `Content-Disposition: attachment`; `X-Content-Type-Options: nosniff`; `Content-Security-Policy: sandbox` |
-| Assinatura webhook | `hmac.HMAC(key, body, sha256)` em cabeçalho `X-OSINT-Signature: sha256=…` |
+| Assinatura webhook | `hmac.HMAC(key, body, sha256)` em cabeçalho `X-Sentinela-Signature: sha256=…` |
 | Log injection | `X-Request-ID` sanitizado (`[A-Za-z0-9\-_]`, máx 64 chars) antes de ser refletido ou gravado |
 | XXE | `defusedxml` com `forbid_dtd=True`, `forbid_entities=True`, `forbid_external=True` no conector RSS |
 | CSV injection | Células com `=`, `+`, `-`, `@`, `\t`, `\r` prefixadas com `'` antes do export |
