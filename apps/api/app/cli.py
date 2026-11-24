@@ -13,10 +13,11 @@ def main():
     sub = p.add_subparsers(dest="cmd")
     a = sub.add_parser("create-admin")
     a.add_argument("--email", required=True)
-    a.add_argument("--password")
+    # --password is intentionally absent: command-line arguments are visible in
+    # `ps aux` and shell history, so credentials must come from getpass only.
     args = p.parse_args()
     if args.cmd == "create-admin":
-        password = args.password or getpass.getpass("Senha do administrador: ")
+        password = getpass.getpass("Senha do administrador: ")
         with SessionLocal() as db:
             user = db.scalar(select(User).where(User.email == args.email.lower()))
             if user:

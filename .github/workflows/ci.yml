@@ -18,6 +18,9 @@ jobs:
       redis:
         image: redis:7
         ports: ['6379:6379']
+        # No password in CI backend job: Redis runs without auth here because
+        # docker-compose auth is exercised in the containers job. Keeping this
+        # service passwordless avoids duplicating secret management in CI.
     env:
       DATABASE_URL: postgresql+psycopg://osint:osint@localhost:5432/osint
       REDIS_URL: redis://localhost:6379/0
@@ -67,6 +70,7 @@ jobs:
       - name: Validate Compose files
         env:
           POSTGRES_PASSWORD: ci-only-password
+          REDIS_PASSWORD: ci-only-redis-password
           CONNECTOR_SECRET_KEY: adJrwjmhUk0LJFTzUsHcafWvKmkOCIh9WI5ITbtxgDg=
           HOSTNAME: sentinela.example.org
           ACME_EMAIL: ci@example.org
@@ -74,11 +78,13 @@ jobs:
       - name: Build production images
         env:
           POSTGRES_PASSWORD: ci-only-password
+          REDIS_PASSWORD: ci-only-redis-password
           CONNECTOR_SECRET_KEY: adJrwjmhUk0LJFTzUsHcafWvKmkOCIh9WI5ITbtxgDg=
         run: docker compose build --pull
       - name: Exercise backup and restore
         env:
           POSTGRES_PASSWORD: ci-only-password
+          REDIS_PASSWORD: ci-only-redis-password
           CONNECTOR_SECRET_KEY: adJrwjmhUk0LJFTzUsHcafWvKmkOCIh9WI5ITbtxgDg=
         run: |
           trap 'docker compose down -v' EXIT

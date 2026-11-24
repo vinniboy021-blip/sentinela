@@ -58,8 +58,8 @@ def allowed_investigations(db: Session, user: User):
 
 class InvestigationIn(BaseModel):
     title: str = Field(min_length=1, max_length=250)
-    objective: str = ""
-    scope: str = ""
+    objective: str = Field(default="", max_length=10000)
+    scope: str = Field(default="", max_length=10000)
 
 
 class EntityIn(BaseModel):

@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+## 0.3.4 — revisão completa do código (2026-11-24)
+
+### Segurança / Correções
+
+- **`monitoring.py`** — `str(error)` → `error.args[0]` com verificação de tipo; consistente
+  com a correção aplicada em `collection.py` na 0.3.2.
+- **`cli.py`** — argumento `--password` removido do CLI `create-admin`; senha sempre via
+  `getpass` para evitar exposição em `ps aux` e histórico do shell (CWE-214).
+- **`routes/intelligence.py`** — `AIBody.task` usa `Literal` com todos os valores válidos;
+  validação redundante `if body.task not in TASKS` removida da rota.
+- **`routes/core.py`** — `InvestigationIn.objective` e `.scope` têm `max_length=10000`.
+- **`ci.yml`** — `REDIS_PASSWORD: ci-only-redis-password` adicionado a todos os jobs de
+  container; CI deixaria de funcionar após a adição de `--requirepass` ao Redis.
+
 ## 0.3.3 — hardening de validação de entrada (2026-11-23)
 
 ### Segurança / Validação

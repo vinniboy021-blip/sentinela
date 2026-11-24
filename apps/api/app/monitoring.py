@@ -183,8 +183,10 @@ def schedule_due_monitors(db: Session, now: datetime | None = None, limit: int =
             # Validation is retried after administrators fix configuration. Alerts
             # are suppressed for repeated failures of the same monitor.
             safe = (
-                str(error)[:500]
-                if isinstance(error, ValueError) or hasattr(error, "category")
+                error.args[0][:500]
+                if (isinstance(error, ValueError) or hasattr(error, "category"))
+                and error.args
+                and isinstance(error.args[0], str)
                 else "Configuração do monitor indisponível"
             )
             add_alert(

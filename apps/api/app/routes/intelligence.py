@@ -600,14 +600,15 @@ def report_download(report_id: str, db: DB, user: Actor):
 
 
 class AIBody(InvestigationBody):
-    task: str = Field(default="summary", max_length=30)
+    task: Literal[
+        "summary", "timeline", "duplicates", "hypotheses",
+        "correlations", "sources", "report", "classify", "inconsistencies"
+    ] = "summary"
 
 
 @router.post("/ai/analyze", status_code=201)
 async def ai_analyze(body: AIBody, db: DB, user: Actor):
     investigation_access(db, user, body.investigation_id, write=True)
-    if body.task not in TASKS:
-        raise HTTPException(422, "Tarefa de IA inválida")
     context = context_for(db, body.investigation_id)
     # Keep prompts minimised: only persisted observation and evidence metadata.
     context.pop("investigation", None)
