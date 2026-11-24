@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr, Field
@@ -63,36 +63,36 @@ class InvestigationIn(BaseModel):
 
 
 class EntityIn(BaseModel):
-    investigation_id: str
-    type: str
-    canonical_value: str
-    label: str | None = None
+    investigation_id: str = Field(min_length=1, max_length=36)
+    type: str = Field(min_length=1, max_length=80)
+    canonical_value: str = Field(min_length=1, max_length=2048)
+    label: str | None = Field(default=None, max_length=250)
     attributes: dict[str, Any] = {}
 
 
 class WorkspaceIn(BaseModel):
-    investigation_id: str
-    kind: str
-    label: str
-    content: str = ""
-    status: str = "open"
+    investigation_id: str = Field(min_length=1, max_length=36)
+    kind: Literal["hypothesis", "observation", "task"]
+    label: str = Field(min_length=1, max_length=250)
+    content: str = Field(default="", max_length=65536)
+    status: Literal["open", "in_progress", "resolved", "dismissed"] = "open"
 
 
 class UserIn(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=12)
-    role: str = "analyst"
+    password: str = Field(min_length=12, max_length=256)
+    role: Literal["admin", "analyst", "viewer"] = "analyst"
 
 
 class MemberIn(BaseModel):
-    user_id: str | None = None
-    email: str | None = None
-    role: str = "viewer"
+    user_id: str | None = Field(default=None, max_length=36)
+    email: EmailStr | None = None
+    role: Literal["editor", "viewer"] = "viewer"
 
     def resolve_identifier(self) -> str:
         if bool(self.user_id) == bool(self.email):
             raise ValueError("Informe user_id ou email")
-        return self.user_id or self.email or ""
+        return self.user_id or (str(self.email) if self.email else "")
 
 
 @router.get("/health/live")
@@ -250,8 +250,6 @@ def add_investigation_member(
     id: str, body: MemberIn, user: User = Depends(current_user), db: Session = Depends(get_db)
 ):
     investigation = owner_access(db, user, id)
-    if body.role not in {"editor", "viewer"}:
-        raise HTTPException(422, "Papel de investigação inválido")
     try:
         identifier = body.resolve_identifier()
     except ValueError as exc:
@@ -440,8 +438,6 @@ def users(_: User = Depends(require_admin), db: Session = Depends(get_db)):
 
 @router.post("/admin/users", status_code=201)
 def create_user(body: UserIn, _: User = Depends(require_admin), db: Session = Depends(get_db)):
-    if body.role not in {"admin", "analyst", "viewer"}:
-        raise HTTPException(422, "Papel inválido")
     if db.scalar(select(User).where(User.email == body.email.lower())):
         raise HTTPException(409, "E-mail já cadastrado")
     u = User(email=body.email.lower(), password_hash=hash_password(body.password), role=body.role)

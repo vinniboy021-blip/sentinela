@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import AliasChoices, Field, model_validator
+from pydantic import AliasChoices, EmailStr, Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     smtp_starttls: bool = True
     smtp_username: str = ""
     smtp_password: str = ""
-    smtp_from: str = "sentinela@localhost"
+    smtp_from: EmailStr = "sentinela@localhost"  # type: ignore[assignment]
     alert_webhook_url: str = ""
     alert_webhook_secret: str = ""
 

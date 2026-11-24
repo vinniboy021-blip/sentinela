@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+## 0.3.3 — hardening de validação de entrada (2026-11-23)
+
+### Segurança / Validação
+
+- **`routes/core.py`** — `WorkspaceIn.kind` e `.status` usam `Literal` (validação antes do banco);
+  `WorkspaceIn.label`/`content` têm `max_length`; `EntityIn` com `Field(max_length=...)`
+  em todos os campos string; `UserIn.role` usa `Literal`; `MemberIn.role` usa `Literal`;
+  `MemberIn.email` trocado de `str` para `EmailStr`; verificações de role duplicadas removidas
+  das rotas (já cobertas pelo schema Pydantic).
+- **`config.py`** — `smtp_from` validado como `EmailStr`; impede header injection no campo `From:`
+  de e-mails de alerta.
+- **`migrations/0002`** — corrigida para adicionar colunas `label` e `status` faltantes em
+  `workspace_items` (ausentes de `0001`) e dois CHECK constraints (`valid_kind`,
+  `valid_workspace_status`).
+
 ## 0.3.2 — auditoria de segurança: achados restantes (2026-11-23)
 
 ### Segurança
