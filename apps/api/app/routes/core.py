@@ -79,7 +79,7 @@ class WorkspaceIn(BaseModel):
 
 
 class UserIn(BaseModel):
-    email: str
+    email: EmailStr
     password: str = Field(min_length=12)
     role: str = "analyst"
 

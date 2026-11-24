@@ -20,6 +20,10 @@ def main() -> None:
             "", "replace-with-a-random-local-password"
         }:
             line = "POSTGRES_PASSWORD=" + secrets.token_urlsafe(32)
+        if line.startswith("REDIS_PASSWORD=") and line.partition("=")[2] in {
+            "", "replace-with-a-random-redis-password"
+        }:
+            line = "REDIS_PASSWORD=" + secrets.token_urlsafe(32)
         if line == "CONNECTOR_SECRET_KEY=":
             line = "CONNECTOR_SECRET_KEY=" + base64.urlsafe_b64encode(secrets.token_bytes(32)).decode()
         lines.append(line)

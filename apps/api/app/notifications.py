@@ -62,9 +62,10 @@ def deliver(alert: Any, recipient: str = "") -> dict[str, Any]:
         message["From"] = settings.smtp_from
         message["To"] = address
         message.set_content(json.dumps(payload, ensure_ascii=False, indent=2, default=str))
+        import ssl as _ssl
         with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=10) as smtp:
             if settings.smtp_starttls:
-                smtp.starttls()
+                smtp.starttls(context=_ssl.create_default_context())
             if settings.smtp_username:
                 smtp.login(settings.smtp_username, settings.smtp_password)
             smtp.send_message(message)
@@ -75,6 +76,10 @@ def deliver(alert: Any, recipient: str = "") -> dict[str, Any]:
         # compromised or misconfigured environment. DNS-pinned transport prevents
         # rebinding attacks even when the URL passes static validation.
         validate_public_url(settings.alert_webhook_url)
+        if not settings.alert_webhook_secret:
+            raise ValueError(
+                "ALERT_WEBHOOK_SECRET não configurado; configure a chave antes de usar webhooks"
+            )
         body = json.dumps(payload, ensure_ascii=False, separators=(",", ":"), default=str).encode()
         signature = hmac.HMAC(settings.alert_webhook_secret.encode(), body, hashlib.sha256).hexdigest()
         with _webhook_client() as client:

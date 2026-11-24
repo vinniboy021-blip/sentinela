@@ -397,7 +397,10 @@ class SocialProfile(Record, Base):
 
 class WorkspaceItem(Record, Base):
     __tablename__ = "workspace_items"
-    __table_args__ = (CheckConstraint("kind IN ('hypothesis','observation','task')", name="valid_kind"),)
+    __table_args__ = (
+        CheckConstraint("kind IN ('hypothesis','observation','task')", name="valid_kind"),
+        CheckConstraint("status IN ('open','in_progress','resolved','dismissed')", name="valid_workspace_status"),
+    )
     investigation_id: Mapped[str] = mapped_column(
         ForeignKey("investigations.id", ondelete="CASCADE"), index=True
     )

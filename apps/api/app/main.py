@@ -48,12 +48,14 @@ class _RealIPMiddleware(BaseHTTPMiddleware):
 
 
 configure_logging()
+_is_production = settings.environment == "production"
 app = FastAPI(
     title="Sentinela API",
     version="0.1.0",
     description="Coleta de fontes públicas autorizadas com proveniência auditável",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url=None if _is_production else "/docs",
+    redoc_url=None if _is_production else "/redoc",
+    openapi_url=None if _is_production else "/openapi.json",
 )
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts)
 app.add_middleware(_RealIPMiddleware)

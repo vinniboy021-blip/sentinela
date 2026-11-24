@@ -54,13 +54,19 @@ class Settings(BaseSettings):
     def production_safety(self) -> "Settings":
         if self.database_url.startswith("sqlite") and not self.allow_test_sqlite:
             raise ValueError("SQLite somente é permitido para testes com ALLOW_TEST_SQLITE=true")
+        if self.environment != "development":
+            if not self.connector_secret_key:
+                raise ValueError(
+                    "CONNECTOR_SECRET_KEY é obrigatório fora do ambiente de desenvolvimento; "
+                    "gere com: python3 -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\""
+                )
         if self.environment == "production":
             if not self.cookie_secure:
                 raise ValueError("COOKIE_SECURE=true é obrigatório em produção")
-            if not self.connector_secret_key:
-                raise ValueError("CONNECTOR_SECRET_KEY é obrigatório em produção")
             if "*" in self.cors_origins:
                 raise ValueError("CORS em produção exige origens explícitas")
+            if self.alert_webhook_url and not self.alert_webhook_secret:
+                raise ValueError("ALERT_WEBHOOK_SECRET é obrigatório quando ALERT_WEBHOOK_URL está configurada")
         return self
 
     @property

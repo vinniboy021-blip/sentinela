@@ -2,6 +2,36 @@
 
 ## Unreleased
 
+## 0.3.1 — auditoria de segurança (2026-11-23)
+
+### Segurança — ALTA
+
+- **`kali_mcp.py`** (FIND-01 / CWE-918) — `httpx.get()` direto substituído por `PublicNetworkBackend`
+  com `validate_public_url()`; endpoint nunca chamava a pilha SSRF dos conectores.
+- **`config.py`** (FIND-02 / CWE-311) — `CONNECTOR_SECRET_KEY` vazia agora falha em qualquer ambiente
+  fora de `development`; credenciais de conector não ficam mais desprotegidas em staging/produção.
+
+### Segurança — MÉDIA
+
+- **`docker-compose.yml`** (FIND-03 / CWE-306) — Redis agora exige `REDIS_PASSWORD`; `--requirepass`
+  passado ao servidor; `REDIS_URL` atualizada para incluir senha.
+- **`main.py`** (FIND-04 / CWE-200) — `/docs`, `/redoc` e `/openapi.json` desabilitados quando
+  `ENVIRONMENT=production`; OpenAPI nunca exposto em produção.
+- **`notifications.py`** (FIND-06 / CWE-321) — Webhook bloqueado quando `ALERT_WEBHOOK_SECRET` está
+  vazio; `config.py` em produção valida a presença da chave quando `ALERT_WEBHOOK_URL` está definida.
+- **`notifications.py`** (FIND-12) — `smtp.starttls()` agora usa `ssl.create_default_context()`;
+  certificado do servidor SMTP verificado corretamente.
+- **`models.py`** (FIND-07 / CWE-20) — `WorkspaceItem.status` protegido com `CHECK` constraint
+  `('open','in_progress','resolved','dismissed')`.
+- **`routes/core.py`** (FIND-08 / CWE-20) — `UserIn.email` trocado de `str` para `EmailStr`.
+
+### Infraestrutura
+
+- **`.env.example`** — adicionado `REDIS_PASSWORD`; corrigido `SMTP_FROM` legado.
+- **`scripts/setup_env.py`** — gera `REDIS_PASSWORD` automaticamente junto com os outros secrets.
+- **`migrations/versions/0002_workspace_status_constraint.py`** — migração DDL para o novo
+  CHECK constraint em `workspace_items.status`.
+
 ## 0.3.0 — melhorias de qualidade e acessibilidade (2026-11-22)
 
 ### Frontend
