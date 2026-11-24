@@ -515,12 +515,15 @@ def run_collection(self: Any, job_id: str) -> dict[str, Any]:
             db.commit()
             return {"status": "succeeded", "new_observations": inserted}
     except Exception as error:
-        # Connector errors explicitly expose safe messages; arbitrary error text is
-        # never persisted because it may include bearer tokens or source payloads.
+        # Only ConnectorError (category != None) carries a safe, pre-sanitized message.
+        # All other exceptions may contain bearer tokens, SQL fragments or upstream
+        # response bodies — never serialise them into the job record or the client.
         retryable = bool(getattr(error, "retryable", True))
         category = getattr(error, "category", None)
         safe_message = (
-            str(error)[:500] if category is not None else "Falha durante a coleta; consulte o ID da execução"
+            error.args[0][:500]
+            if category is not None and error.args and isinstance(error.args[0], str)
+            else "Falha durante a coleta; consulte o ID da execução"
         )
         logger.warning("collection_failed", extra={"job_id": job_id, "run_id": run_id})
         return _fail_run(job_id, run_id, retryable=retryable, message=safe_message)

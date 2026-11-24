@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+## 0.3.2 — auditoria de segurança: achados restantes (2026-11-23)
+
+### Segurança
+
+- **`main.py`** (FIND-05 / CWE-200) — `/metrics/prometheus` agora retorna 404 para qualquer
+  peer que não seja loopback ou RFC-1918; guarda na camada ASGI, independente do Caddy.
+- **`collection.py`** (FIND-10 / CWE-209) — `str(error)` substituído por `error.args[0]`
+  com verificação de tipo; garante que somente o texto literal da `ConnectorError` é serializado,
+  nunca `repr()` de objetos arbitrários com tokens ou payloads.
+- **`Dockerfile` (api)** (FIND-09) — `--proxy-headers --forwarded-allow-ips 127.0.0.1`
+  removidos do uvicorn; flag era ineficaz na rede bridge Docker (Caddy chega com IP 172.x.x.x)
+  e conflitava com `_RealIPMiddleware`, que já faz o trabalho correto.
+- **`package.json`** (FIND-11) — `next` e `eslint-config-next` corrigidos de `^16.4.3`
+  (versão inexistente) para `^15.1.0`.
+
 ## 0.3.1 — auditoria de segurança (2026-11-23)
 
 ### Segurança — ALTA

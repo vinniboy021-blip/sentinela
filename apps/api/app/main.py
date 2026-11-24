@@ -73,7 +73,22 @@ app.include_router(kali_router, prefix="/api/v1")
 app.include_router(collection_router, prefix="/api/v1")
 app.include_router(intelligence_router, prefix="/api/v1")
 if settings.metrics_enabled:
-    app.mount("/metrics/prometheus", make_asgi_app())
+    # /metrics/prometheus is blocked at the Caddy edge for external traffic.
+    # Guard it here too so direct access to the API port (e.g. during development
+    # or if Caddy is bypassed) requires the peer to be a trusted internal host.
+    metrics_app = make_asgi_app()
+
+    async def _metrics_guard(scope, receive, send):  # type: ignore[no-untyped-def]
+        if scope["type"] == "http":
+            client = scope.get("client")
+            peer = client[0] if client else ""
+            if not _is_trusted_proxy(peer):
+                response = JSONResponse({"detail": "Not found"}, status_code=404)
+                await response(scope, receive, send)
+                return
+        await metrics_app(scope, receive, send)
+
+    app.mount("/metrics/prometheus", _metrics_guard)
 
 
 @app.get("/", include_in_schema=False)
