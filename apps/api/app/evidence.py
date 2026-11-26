@@ -7,7 +7,35 @@ from pathlib import Path
 from typing import BinaryIO, Protocol, cast
 from uuid import uuid4
 
+import filetype
 from fastapi import UploadFile
+
+# MIME types blocked for evidence uploads (executables, scripts).
+_BLOCKED_MIME_PREFIXES = (
+    "application/x-executable",
+    "application/x-sharedlib",
+    "application/x-msdos-program",
+    "application/x-msdownload",
+    "application/x-sh",
+    "application/x-shellscript",
+    "text/x-shellscript",
+    "text/x-script",
+    "application/x-python",
+    "application/javascript",
+    "text/javascript",
+    "application/x-php",
+    "application/x-perl",
+)
+
+
+def _check_mime(header: bytes) -> str:
+    """Detect MIME from magic bytes; raise if the type is blocked."""
+    kind = filetype.guess(header)
+    detected = kind.mime if kind else "application/octet-stream"
+    for prefix in _BLOCKED_MIME_PREFIXES:
+        if detected.startswith(prefix):
+            raise ValueError(f"Tipo de arquivo não permitido: {detected}")
+    return detected
 
 
 class Storage(Protocol):
@@ -75,6 +103,7 @@ async def capture_upload(upload: UploadFile, storage: Storage, max_bytes: int) -
     key = uuid4().hex
     sha = hashlib.sha256()
     size = 0
+    mime_checked = False
     # A spool bounds RAM while streaming the HTTP upload.
     with tempfile.SpooledTemporaryFile(max_size=1024 * 1024, mode="w+b") as stream:
         # Starlette's UploadFile delegates to a threadpool. Reading the backing
@@ -92,6 +121,10 @@ async def capture_upload(upload: UploadFile, storage: Storage, max_bytes: int) -
                 raise ValueError("Arquivo excede o limite configurado")
             sha.update(chunk)
             stream.write(chunk)
+            # Validate MIME from first chunk via magic bytes, not client header.
+            if not mime_checked:
+                _check_mime(chunk[:4096])
+                mime_checked = True
         if not size:
             raise ValueError("Arquivo vazio")
         stream.seek(0)

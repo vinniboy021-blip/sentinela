@@ -1,16 +1,8 @@
 import type { NextConfig } from 'next';
 
-const CSP = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data:",
-  "font-src 'self'",
-  "connect-src 'self'",
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-].join('; ');
+// Security headers are set dynamically (with per-request CSP nonce) by middleware.ts.
+// next.config.ts headers() runs at build time and cannot generate nonces, so it is
+// intentionally left empty here. All security headers are emitted by the middleware.
 
 const config: NextConfig = {
   output: 'standalone',
@@ -19,23 +11,7 @@ const config: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: `${process.env.API_INTERNAL_URL ?? 'http://localhost:8000'}/api/:path*`,
-      },
-    ];
-  },
-
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          { key: 'X-Frame-Options', value: 'DENY' },
-          { key: 'X-Content-Type-Options', value: 'nosniff' },
-          { key: 'Referrer-Policy', value: 'no-referrer' },
-          { key: 'Permissions-Policy', value: 'geolocation=(), camera=(), microphone=()' },
-          { key: 'Content-Security-Policy', value: CSP },
-          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
-        ],
+        destination: `${process.env.API_INTERNAL_URL ?? 'http://localhost:8001'}/api/:path*`,
       },
     ];
   },

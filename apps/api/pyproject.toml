@@ -13,7 +13,8 @@ dependencies = [
   "psycopg[binary]>=3.2,<4", "alembic>=1.14,<2", "pydantic-settings>=2.6,<3",
   "argon2-cffi>=23.1", "python-multipart>=0.0.20", "redis>=5,<7", "celery>=5.4,<6", "packaging>=24",
   "croniter>=6,<7", "httpx>=0.28.1,<0.29", "dnspython>=2.7,<3", "feedparser>=6,<7",
-  "httpcore>=1,<2", "defusedxml>=0.7,<1", "tenacity>=9,<10", "prometheus-client>=0.21,<1", "cryptography>=44", "email-validator>=2,<3"
+  "httpcore>=1,<2", "defusedxml>=0.7,<1", "tenacity>=9,<10", "prometheus-client>=0.21,<1",
+  "cryptography>=44", "email-validator>=2,<3", "filetype>=1.2,<2"
 ]
 
 [project.optional-dependencies]
