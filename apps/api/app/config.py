@@ -1,7 +1,9 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import AliasChoices, EmailStr, Field, model_validator
+import re as _re
+
+from pydantic import AliasChoices, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -46,9 +48,21 @@ class Settings(BaseSettings):
     smtp_starttls: bool = True
     smtp_username: str = ""
     smtp_password: str = ""
-    smtp_from: EmailStr = "sentinela@localhost"  # type: ignore[assignment]
+    smtp_from: str = "sentinela@localhost"
     alert_webhook_url: str = ""
     alert_webhook_secret: str = ""
+
+    @field_validator("smtp_from")
+    @classmethod
+    def validate_smtp_from(cls, value: str) -> str:
+        # Accept any RFC 5321 local-part@domain; header injection requires
+        # \n or \r which are stripped here. Strict TLD validation is not
+        # applied because internal SMTP relays use single-label hostnames.
+        if "\n" in value or "\r" in value or len(value) > 320:
+            raise ValueError("smtp_from contém caracteres inválidos")
+        if not _re.fullmatch(r"[^@\s]{1,254}@[^@\s]+", value):
+            raise ValueError("smtp_from deve ter o formato local@domínio")
+        return value
 
     @model_validator(mode="after")
     def production_safety(self) -> "Settings":
