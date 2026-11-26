@@ -1,6 +1,7 @@
 """Server-side opaque sessions, CSRF protection, RBAC and bounded login attempts."""
 
 import hashlib
+import re as _re
 import secrets
 import threading
 import time
@@ -12,7 +13,7 @@ from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError
 from cryptography.fernet import Fernet, InvalidToken
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
@@ -218,6 +219,43 @@ def redact_connector_settings(values: dict[str, Any]) -> dict[str, Any]:
 class LoginBody(BaseModel):
     email: EmailStr
     password: str = Field(min_length=1, max_length=256)
+
+
+class RegisterBody(BaseModel):
+    email: str = Field(max_length=320)
+    password: str = Field(min_length=12, max_length=256)
+    name: str = Field(default="", max_length=120)
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, value: str) -> str:
+        value = value.strip().lower()
+        if "\n" in value or "\r" in value:
+            raise ValueError("E-mail inválido")
+        if not _re.fullmatch(r"[^@\s]{1,254}@[^@\s]+\.[^@\s]+", value):
+            raise ValueError("E-mail inválido")
+        return value
+
+
+@router.post("/register", status_code=201)
+def register(body: RegisterBody, db: Session = Depends(get_db)) -> dict[str, Any]:
+    if not settings.open_registration:
+        raise HTTPException(403, "Cadastro público desabilitado. Contacte um administrador.")
+    email = str(body.email).lower()
+    existing = db.scalar(select(User).where(User.email == email))
+    if existing:
+        raise HTTPException(409, "E-mail já cadastrado.")
+    user = User(
+        email=email,
+        password_hash=hash_password(body.password),
+        role="viewer",
+        is_active=True,
+    )
+    db.add(user)
+    audit(db, None, "auth.register", "user", details={"email": email})
+    db.commit()
+    db.refresh(user)
+    return {"user": user_dict(user)}
 
 
 @router.post("/login")
