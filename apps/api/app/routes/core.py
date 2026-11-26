@@ -1,7 +1,8 @@
+import re as _re
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
@@ -12,6 +13,7 @@ from app.auth import (
     investigation_access,
     owner_access,
     require_admin,
+    require_analyst,
     user_dict,
 )
 from app.db import get_db
@@ -78,16 +80,35 @@ class WorkspaceIn(BaseModel):
     status: Literal["open", "in_progress", "resolved", "dismissed"] = "open"
 
 
+def _validate_email_field(value: str) -> str:
+    value = value.strip().lower()
+    if "\n" in value or "\r" in value:
+        raise ValueError("E-mail inválido")
+    if not _re.fullmatch(r"[^@\s]{1,254}@[^@\s]+\.[^@\s]+", value):
+        raise ValueError("E-mail inválido")
+    return value
+
+
 class UserIn(BaseModel):
-    email: EmailStr
+    email: str = Field(max_length=320)
     password: str = Field(min_length=12, max_length=256)
     role: Literal["admin", "analyst", "viewer"] = "analyst"
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        return _validate_email_field(v)
 
 
 class MemberIn(BaseModel):
     user_id: str | None = Field(default=None, max_length=36)
-    email: EmailStr | None = None
+    email: str | None = Field(default=None, max_length=320)
     role: Literal["editor", "viewer"] = "viewer"
+
+    @field_validator("email")
+    @classmethod
+    def validate_member_email(cls, v: str | None) -> str | None:
+        return _validate_email_field(v) if v else None
 
     def resolve_identifier(self) -> str:
         if bool(self.user_id) == bool(self.email):
@@ -204,7 +225,7 @@ def investigations(
 
 @router.post("/investigations", status_code=201)
 def create_investigation(
-    body: InvestigationIn, user: User = Depends(current_user), db: Session = Depends(get_db)
+    body: InvestigationIn, user: User = Depends(require_analyst), db: Session = Depends(get_db)
 ):
     i = Investigation(**body.model_dump(), owner_id=user.id)
     db.add(i)
@@ -294,7 +315,7 @@ def remove_investigation_member(
 
 
 @router.post("/entities", status_code=201)
-def create_entity(body: EntityIn, user: User = Depends(current_user), db: Session = Depends(get_db)):
+def create_entity(body: EntityIn, user: User = Depends(require_analyst), db: Session = Depends(get_db)):
     investigation_access(db, user, body.investigation_id, True)
     values = body.model_dump()
     values["label"] = values.get("label") or values["canonical_value"]
@@ -444,6 +465,51 @@ def create_user(body: UserIn, _: User = Depends(require_admin), db: Session = De
     db.add(u)
     db.commit()
     return {"id": u.id, "email": u.email, "role": u.role, "is_active": u.is_active}
+
+
+class RolePatch(BaseModel):
+    role: Literal["admin", "analyst", "viewer"]
+
+
+class ActivePatch(BaseModel):
+    is_active: bool
+
+
+@router.patch("/admin/users/{user_id}/role")
+def patch_user_role(
+    user_id: str,
+    body: RolePatch,
+    actor: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    target = db.get(User, user_id)
+    if not target:
+        raise HTTPException(404, "Usuário não encontrado")
+    if target.id == actor.id:
+        raise HTTPException(400, "Administrador não pode alterar o próprio papel")
+    target.role = body.role
+    audit(db, actor, "admin.user_role_changed", "user", target.id, details={"role": body.role})
+    db.commit()
+    return user_dict(target)
+
+
+@router.patch("/admin/users/{user_id}/active")
+def patch_user_active(
+    user_id: str,
+    body: ActivePatch,
+    actor: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    target = db.get(User, user_id)
+    if not target:
+        raise HTTPException(404, "Usuário não encontrado")
+    if target.id == actor.id:
+        raise HTTPException(400, "Administrador não pode desativar a própria conta")
+    target.is_active = body.is_active
+    action = "admin.user_activated" if body.is_active else "admin.user_deactivated"
+    audit(db, actor, action, "user", target.id)
+    db.commit()
+    return user_dict(target)
 
 
 @router.get("/admin/connectors")

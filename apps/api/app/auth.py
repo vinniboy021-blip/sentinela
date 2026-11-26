@@ -132,6 +132,13 @@ def require_admin(user: User = Depends(current_user)) -> User:
     return user
 
 
+def require_analyst(user: User = Depends(current_user)) -> User:
+    """Permite admin e analyst; bloqueia viewer (somente leitura)."""
+    if user.role == "viewer":
+        raise HTTPException(403, "Sua conta é somente leitura. Contacte um administrador.")
+    return user
+
+
 def investigation_access(
     db: Session, user: User, investigation_id: str, write: bool = False
 ) -> Investigation:
@@ -217,8 +224,18 @@ def redact_connector_settings(values: dict[str, Any]) -> dict[str, Any]:
 
 
 class LoginBody(BaseModel):
-    email: EmailStr
+    email: str = Field(max_length=320)
     password: str = Field(min_length=1, max_length=256)
+
+    @field_validator("email")
+    @classmethod
+    def validate_login_email(cls, value: str) -> str:
+        value = value.strip().lower()
+        if "\n" in value or "\r" in value:
+            raise ValueError("E-mail inválido")
+        if not _re.fullmatch(r"[^@\s]{1,254}@[^@\s]+\.[^@\s]+", value):
+            raise ValueError("E-mail inválido")
+        return value
 
 
 class RegisterBody(BaseModel):

@@ -39,8 +39,9 @@ def upgrade() -> None:
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column("user_id", sa.String(36), sa.ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
         sa.Column("token_hash", sa.String(64), nullable=False, unique=True),
-        sa.Column("csrf_token_hash", sa.String(64), nullable=False),
+        sa.Column("csrf_token", sa.String(64), nullable=False),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("last_used_at", sa.DateTime(timezone=True), nullable=False, server_default=_utcnow()),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=_utcnow()),
     )
     op.create_index("ix_sessions_token_hash", "sessions", ["token_hash"], unique=True)
