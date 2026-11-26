@@ -369,14 +369,20 @@ def ingest_observations(db: Session, job: CollectionJob, items: list[Any]) -> in
     return count
 
 
+_redis_client: redis.Redis | None = None
+
+
+def _get_redis() -> redis.Redis:
+    global _redis_client
+    if _redis_client is None:
+        _redis_client = redis.Redis.from_url(settings.redis_url, socket_connect_timeout=2, socket_timeout=2)
+    return _redis_client
+
+
 def _rate_limit(connector_id: str) -> float:
     """Coordinate starts across workers; connector HTTP clients also limit requests."""
-    client = redis.Redis.from_url(settings.redis_url, socket_connect_timeout=2, socket_timeout=2)
-    try:
-        accepted = client.set(f"sentinela:collection:start:{connector_id}", "1", nx=True, px=1000)
-        return 0 if accepted else 1.5
-    finally:
-        client.close()
+    accepted = _get_redis().set(f"sentinela:collection:start:{connector_id}", "1", nx=True, px=1000)
+    return 0 if accepted else 1.5
 
 
 def _owns_run(db: Session, job: CollectionJob, run_id: str) -> bool:

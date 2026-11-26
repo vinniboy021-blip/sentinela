@@ -11,7 +11,8 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Upload
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
-from sqlalchemy import func, select
+from sqlalchemy import cast, func, select
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Session
 
 from app.ai import TASKS, cited_summary, local_model_hypotheses
@@ -531,11 +532,14 @@ def evidence_delete(evidence_id: str, db: DB, user: Actor):
         },
     )
     # Remove all references so a graph cannot suggest purged evidence is available.
+    # Use JSONB containment (@>) to avoid a full-table scan.
     for relation in db.scalars(
-        select(EntityRelationship).where(EntityRelationship.investigation_id == evidence.investigation_id)
+        select(EntityRelationship).where(
+            EntityRelationship.investigation_id == evidence.investigation_id,
+            EntityRelationship.evidence_ids.cast(JSONB).contains(cast([evidence_id], JSONB)),
+        )
     ):
-        if evidence_id in relation.evidence_ids:
-            relation.evidence_ids = [ref for ref in relation.evidence_ids if ref != evidence_id]
+        relation.evidence_ids = [ref for ref in relation.evidence_ids if ref != evidence_id]
     # EvidenceVersion rows use ON DELETE CASCADE; deleting them explicitly before
     # the parent causes duplicate DELETE bookkeeping under SQLAlchemy/PostgreSQL.
     db.delete(evidence)

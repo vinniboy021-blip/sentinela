@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     environment: str = "development"
-    database_url: str = "postgresql+psycopg://osint:osint@postgres:5432/osint"
+    database_url: str = Field(default="postgresql+psycopg://osint:osint@postgres:5432/osint", validation_alias=AliasChoices("DATABASE_URL", "SQLALCHEMY_DATABASE_URL"))
     redis_url: str = "redis://redis:6379/0"
     session_cookie: str = "sentinela_session"
     session_ttl_seconds: int = Field(default=28800, ge=300, le=604800)
@@ -67,6 +67,10 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def production_safety(self) -> "Settings":
+        if self.environment != "development" and "osint:osint@" in self.database_url:
+            raise ValueError(
+                "DATABASE_URL contém credenciais padrão; configure DATABASE_URL no ambiente"
+            )
         if self.database_url.startswith("sqlite") and not self.allow_test_sqlite:
             raise ValueError("SQLite somente é permitido para testes com ALLOW_TEST_SQLITE=true")
         if self.environment != "development":

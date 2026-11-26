@@ -140,7 +140,8 @@ def list_connectors(user: User = Depends(current_user), db: Session = Depends(ge
     items = []
     for connector_id, connector in registry.items():
         row = db.get(Connector, connector_id)
-        assert row is not None
+        if row is None:
+            raise HTTPException(500, "Estado interno inconsistente: conector não encontrado após sincronização")
         try:
             health = connector.health(effective_config(db, connector_id, {}))
         except (ValueError, HTTPException):
@@ -170,7 +171,8 @@ def toggle_connector(
         raise HTTPException(404, "Conector não encontrado")
     ensure_connector_rows(db)
     row = db.get(Connector, connector_id)
-    assert row is not None
+    if row is None:
+        raise HTTPException(500, "Estado interno inconsistente: conector não encontrado após sincronização")
     row.enabled = body.enabled
     if not body.enabled:
         for job in db.scalars(
@@ -292,7 +294,8 @@ def cancel_job(
         .with_for_update()
         .execution_options(populate_existing=True)
     )
-    assert job is not None
+    if job is None:
+        raise HTTPException(404, "Tarefa não encontrada")
     if job.status == "cancelled":
         return serialize(job)
     if job.status not in ACTIVE_STATUSES:
@@ -319,7 +322,8 @@ def retry_job(
         .with_for_update()
         .execution_options(populate_existing=True)
     )
-    assert job is not None
+    if job is None:
+        raise HTTPException(404, "Tarefa não encontrada")
     if job.status not in {"failed", "dead_letter", "cancelled"}:
         raise HTTPException(409, "Somente tarefas canceladas ou com falha podem ser reenviadas")
     monitor = db.get(Monitor, job.monitor_id) if job.monitor_id else None
@@ -391,7 +395,8 @@ def edit_monitor(
         .with_for_update()
         .execution_options(populate_existing=True)
     )
-    assert monitor is not None
+    if monitor is None:
+        raise HTTPException(404, "Monitor não encontrado")
     updates = body.model_dump(exclude_unset=True)
     if not updates:
         raise HTTPException(400, "Nenhuma alteração informada")
@@ -456,7 +461,8 @@ def run_monitor(
         .with_for_update()
         .execution_options(populate_existing=True)
     )
-    assert monitor is not None
+    if monitor is None:
+        raise HTTPException(404, "Monitor não encontrado")
     if not monitor.enabled:
         raise HTTPException(409, "Monitor pausado")
     active = db.scalar(

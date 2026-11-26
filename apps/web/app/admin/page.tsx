@@ -75,6 +75,7 @@ export default function AdminPage() {
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
         setError(d?.detail ?? 'Erro ao criar usuário.');
+        setNewPassword('');
         return;
       }
       setMsg('Usuário criado com sucesso.');
