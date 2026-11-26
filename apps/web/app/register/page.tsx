@@ -9,6 +9,7 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -47,7 +48,8 @@ export default function Register() {
         return;
       }
 
-      router.push('/login?registered=1');
+      setSuccess(true);
+      setTimeout(() => router.push('/login?registered=1'), 2000);
     } catch {
       setError('Falha de conexão com o servidor.');
     } finally {
@@ -99,9 +101,14 @@ export default function Register() {
               />
             </label>
           </p>
-          <button type="submit" disabled={loading}>
+          <button type="submit" disabled={loading || success}>
             {loading ? 'Aguarde…' : 'Criar conta'}
           </button>
+          {success && (
+            <p role="status" style={{ color: 'var(--color-success, #4ade80)', marginTop: '0.75rem' }}>
+              Conta criada com sucesso! Redirecionando para o login…
+            </p>
+          )}
           {error && <p role="alert" className="error">{error}</p>}
         </form>
         <p style={{ marginTop: '1rem', fontSize: '0.9em' }}>
