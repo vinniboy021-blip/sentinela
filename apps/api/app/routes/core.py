@@ -199,13 +199,10 @@ def global_search(
         observation_query = observation_query.where(Observation.investigation_id == scope)
         indicator_query = indicator_query.where(ThreatIndicator.investigation_id == scope)
     else:
-        entity_query = entity_query.where(Entity.investigation_id.in_(allowed_investigations(db, user)))
-        observation_query = observation_query.where(
-            Observation.investigation_id.in_(allowed_investigations(db, user))
-        )
-        indicator_query = indicator_query.where(
-            ThreatIndicator.investigation_id.in_(allowed_investigations(db, user))
-        )
+        scope_ids = allowed_investigations(db, user)
+        entity_query = entity_query.where(Entity.investigation_id.in_(scope_ids))
+        observation_query = observation_query.where(Observation.investigation_id.in_(scope_ids))
+        indicator_query = indicator_query.where(ThreatIndicator.investigation_id.in_(scope_ids))
     return {
         "entities": [dump(x) for x in db.scalars(entity_query.limit(limit))],
         "observations": [dump(x) for x in db.scalars(observation_query.limit(limit))],
@@ -242,27 +239,25 @@ def get_investigation(id: str, user: User = Depends(current_user), db: Session =
 
 @router.get("/investigations/{id}/members")
 def investigation_members(id: str, user: User = Depends(current_user), db: Session = Depends(get_db)):
-    investigation_access(db, user, id)
+    investigation = investigation_access(db, user, id)
     members = db.scalars(select(InvestigationMember).where(InvestigationMember.investigation_id == id)).all()
-    owner = db.scalar(select(Investigation).where(Investigation.id == id))
+    all_user_ids = list({m.user_id for m in members} | {investigation.owner_id})
+    users_map = {u.id: u for u in db.scalars(select(User).where(User.id.in_(all_user_ids)))}
     result = []
     for member in members:
-        member_user = db.get(User, member.user_id)
+        member_user = users_map.get(member.user_id)
         if member_user:
             result.append({**dump(member), "user": user_dict(member_user)})
-    if owner and not any(member["user_id"] == owner.owner_id for member in result):
-        owner_user = db.get(User, owner.owner_id)
+    if not any(m["user_id"] == investigation.owner_id for m in result):
+        owner_user = users_map.get(investigation.owner_id)
         if owner_user:
-            result.insert(
-                0,
-                {
-                    "id": None,
-                    "investigation_id": id,
-                    "user_id": owner.owner_id,
-                    "role": "owner",
-                    "user": user_dict(owner_user),
-                },
-            )
+            result.insert(0, {
+                "id": None,
+                "investigation_id": id,
+                "user_id": investigation.owner_id,
+                "role": "owner",
+                "user": user_dict(owner_user),
+            })
     return {"items": result, "total": len(result)}
 
 
@@ -452,9 +447,10 @@ def audit_log(
 
 
 @router.get("/admin/users")
-def users(_: User = Depends(require_admin), db: Session = Depends(get_db)):
-    records = db.scalars(select(User).order_by(User.created_at.desc())).all()
-    return {"items": [user_dict(record) for record in records], "total": len(records)}
+def users(
+    skip: int = 0, limit: int = 50, _: User = Depends(require_admin), db: Session = Depends(get_db)
+):
+    return page(db, select(User).order_by(User.created_at.desc()), skip, limit)
 
 
 @router.post("/admin/users", status_code=201)

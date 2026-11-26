@@ -250,7 +250,7 @@ def review(candidate_id: str, body: ReviewBody, db: DB, user: Actor):
                 event_type="relationship_confirmed",
                 title="Associação revisada e confirmada",
                 details={"relationship_id": relation.id},
-                dedupe_key=f"correlation:{candidate.id}:confirmed:{utcnow().isoformat()}",
+                dedupe_key=f"correlation:{candidate.id}:confirmed",
             )
         )
     db.commit()

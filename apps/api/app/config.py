@@ -51,7 +51,7 @@ class Settings(BaseSettings):
     smtp_from: str = "sentinela@localhost"
     alert_webhook_url: str = ""
     alert_webhook_secret: str = ""
-    open_registration: bool = True
+    open_registration: bool = False
 
     @field_validator("smtp_from")
     @classmethod

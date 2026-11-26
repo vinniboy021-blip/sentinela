@@ -28,8 +28,11 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetch('/api/v1/auth/me', { credentials: 'include' })
-      .then((r) => r.ok ? r.json() : Promise.reject(r.status))
-      .then((d) => setUser(d.user))
+      .then((r) => {
+        if (r.status === 401 || r.status === 403) { window.location.href = '/login'; return null; }
+        return r.ok ? r.json() : null;
+      })
+      .then((d) => { if (d) setUser(d.user); })
       .catch(() => {});
 
     fetch('/api/v1/dashboard', { credentials: 'include' })
@@ -61,14 +64,20 @@ export default function Dashboard() {
           ))}
         </nav>
         <div style={{ marginTop: 'auto', paddingTop: '1rem' }}>
-          <Link href="/api/v1/auth/logout" style={{ fontSize: '0.85em', opacity: 0.6 }}
-            onClick={async (e) => {
-              e.preventDefault();
-              await fetch('/api/v1/auth/logout', { method: 'POST', credentials: 'include' });
+          <button
+            style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '0.85em', cursor: 'pointer', padding: 0 }}
+            onClick={async () => {
+              const csrf = sessionStorage.getItem('csrf_token') ?? '';
+              await fetch('/api/v1/auth/logout', {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'X-CSRF-Token': csrf },
+              });
+              sessionStorage.removeItem('csrf_token');
               window.location.href = '/login';
             }}>
             Sair
-          </Link>
+          </button>
         </div>
       </aside>
       <main className="main">
